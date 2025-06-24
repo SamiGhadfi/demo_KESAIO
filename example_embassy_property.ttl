@@ -1,0 +1,34 @@
+ 
+@prefix ex: <http://example.org/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# Define the classes
+ex:Government a owl:Class ;
+#	owl:equivalentClass [ 
+#		a owl:Restriction ;
+#		owl:onProperty ex:governs ;
+#		owl:someValuesFrom ex:City 
+#	] .
+	rdfs:subClassOf [
+			a owl:Restriction ;
+			owl:onProperty :governs ;
+			owl:someValuesFrom ex:City ;
+			owl:minCardinality 1 
+		] .
+ex:City a owl:Class .
+
+# Define the object property
+ex:governs a owl:ObjectProperty ;
+    rdfs:domain ex:Government ;
+    rdfs:range ex:City .
+
+# Instances of Government and City
+ex:CityOfLondon a ex:City ;
+    rdfs:label "City of London" .
+
+ex:UK_Government a ex:Government ;
+    rdfs:label "London Government" ;
+    ex:governs ex:CityOfLondon .
+
