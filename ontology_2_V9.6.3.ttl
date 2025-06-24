@@ -1,0 +1,1020 @@
+
+@prefix kes: <http://kesaio.loria.fr/rdfs#> .
+
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+@prefix swrl: <http://www.w3.org/2003/11/swrl#> .
+@prefix swrlb: <http://www.w3.org/2003/11/swrlb#> .
+
+<http://kesaio.loria.fr/rdfs> a owl:Ontology .
+
+#----------------------------------------------------------------------------------------------
+#-------------------------------------- Schema --------------------------------------
+
+#------------------------ Defining generic concepts and properties :
+
+#-----------
+
+kes:OperationalConcept a owl:Class .
+
+kes:Localizable a owl:Class .
+
+kes:has_object_property_AP a owl:AnnotationProperty ; rdfs:domain owl:Class ; rdfs:range owl:ObjectProperty .
+kes:has_datatype_property_AP a owl:AnnotationProperty ; rdfs:domain owl:Class ; rdfs:range owl:DatatypeProperty .
+
+kes:class_color_AP a owl:AnnotationProperty ; rdfs:domain owl:Class ; rdfs:range xsd:string .
+
+kes:SpaceLocation a owl:Class .
+	kes:geo_coordinate_lat a owl:DatatypeProperty, owl:FunctionalProperty ;
+		rdfs:domain kes:SpaceLocation ; rdfs:range xsd:decimal . # in (52.2296756, 21.0122287) the latitude is 52.2296756
+	kes:geo_coordinate_long a owl:DatatypeProperty, owl:FunctionalProperty ;
+		rdfs:domain kes:SpaceLocation; rdfs:range xsd:decimal . # in (52.2296756, 21.0122287) the longitude is 21.0122287
+
+kes:SpaceTimeLocation a owl:Class ; rdfs:subClassOf kes:SpaceLocation .
+
+kes:SpaceTimeLocation_Interval a owl:Class ; rdfs:subClassOf kes:SpaceTimeLocation .
+	kes:startTime a owl:DatatypeProperty, owl:FunctionalProperty ; 
+		rdfs:domain kes:SpaceTimeLocation_Interval ; rdfs:range xsd:dateTime . # example date : "1994-12-28T00:00:00Z"^^xsd:dateTime
+	kes:endTime a owl:DatatypeProperty, owl:FunctionalProperty ; 
+		rdfs:domain kes:SpaceTimeLocation_Interval ; rdfs:range xsd:dateTime . 
+
+kes:SpaceTimeLocation_Point a owl:Class ; rdfs:subClassOf kes:SpaceTimeLocation .
+	kes:time a owl:DatatypeProperty, owl:FunctionalProperty ; rdfs:domain kes:SpaceTimeLocation_Point ; rdfs:range xsd:dateTime . # example date : "1994-12-28T00:00:00Z"^^xsd:dateTime
+
+kes:Collection a owl:Class .
+
+kes:Item a owl:Class .
+
+#------------------------ Concepts and Hierarchical relations between classes:
+
+#-----------
+kes:Person a owl:Class ; 
+	rdfs:subClassOf  kes:Localizable .
+
+kes:first_name a owl:DatatypeProperty, owl:FunctionalProperty ; rdfs:domain kes:Person ; rdfs:range xsd:string .
+kes:last_name a owl:DatatypeProperty, owl:FunctionalProperty ; rdfs:domain kes:Person ; rdfs:range xsd:string .
+kes:date_of_birth a owl:DatatypeProperty, owl:FunctionalProperty ; rdfs:domain kes:Person ; rdfs:range xsd:dateTime .
+
+kes:Supply a owl:Class ; 
+	rdfs:subClassOf kes:Localizable, kes:OperationalConcept .
+
+#-----------
+
+kes:disaster_creates_emergency_AP a owl:AnnotationProperty ; rdfs:domain owl:Class ; rdfs:range owl:Class .
+
+# kes:property_to_causedEmergency a owl:ObjectProperty ; rdfs:domain owl:ObjectProperty ; rdfs:range owl:Class .
+# kes:property_to_causedEmergency a owl:ObjectProperty ; rdfs:domain owl:DatatypeProperty ; rdfs:range owl:Class .
+kes:property_to_causedEmergency a owl:AnnotationProperty ; rdfs:domain owl:DatatypeProperty ; rdfs:range owl:Class .
+
+kes:Disaster a owl:Class ; 
+	kes:class_color_AP "orange" ;
+	rdfs:subClassOf  kes:Localizable, kes:OperationalConcept ; 
+	rdfs:subClassOf [ 
+			a owl:Restriction; 
+			owl:onProperty kes:disaster_creates_emergency ;
+			owl:allValuesFrom kes:Emergency_to_handle ;
+			owl:minCardinality "1"^^xsd:integer
+		] ;
+	# owl:equivalentClass wd:Q3839081 .
+	rdfs:seeAlso wd:Q3839081 .
+	
+	kes:Earthquake rdfs:subClassOf kes:Disaster ; 
+		#-------- meta-data :
+		kes:disaster_creates_emergency_AP kes:Death_Emergency ;
+		kes:disaster_creates_emergency_AP kes:Injured_Emergency ;
+		kes:disaster_creates_emergency_AP kes:Rescue_Emergency ;
+		kes:disaster_creates_emergency_AP kes:Collapsed_Building_Emergency ; 
+		kes:disaster_creates_emergency_AP kes:DisplacedPeople_Emergency ; 
+		#-------- logical axioms :
+		rdfs:subClassOf [ 
+				a owl:Restriction; 
+				owl:onProperty kes:richter_magnitude_scale ;
+				owl:minCardinality "0"^^xsd:integer
+			] , 
+			[ 
+				a owl:Restriction; 
+				owl:onProperty kes:moment_magnitude_scale ;
+				owl:minCardinality "0"^^xsd:integer
+			] ,
+			[ 
+				a owl:Restriction; 
+				owl:onProperty kes:jma_magnitude ;
+				owl:minCardinality "0"^^xsd:integer
+			] .
+	
+	kes:Earthquake_producing_Tsunami rdfs:subClassOf kes:Earthquake .
+
+kes:number_of_injured a owl:DatatypeProperty, owl:FunctionalProperty ; 
+	rdfs:domain kes:Disaster ; rdfs:range xsd:integer ; 
+	kes:property_to_causedEmergency kes:Injured_Emergency .
+kes:number_of_deaths a owl:DatatypeProperty, owl:FunctionalProperty ; 
+	rdfs:domain kes:Disaster ; rdfs:range xsd:integer ; 
+	kes:property_to_causedEmergency kes:Death_Emergency .
+kes:number_of_displaced a owl:DatatypeProperty, owl:FunctionalProperty ; 
+	rdfs:domain kes:Disaster ; rdfs:range xsd:integer ; 
+	kes:property_to_causedEmergency kes:DisplacedPeople_Emergency .
+
+kes:richter_magnitude_scale a owl:DatatypeProperty, owl:FunctionalProperty ; 
+		rdfs:comment "earthquake magnitude on the Richter magnitude scale" ; 
+		rdfs:domain kes:Earthquake ; rdfs:range xsd:decimal .
+kes:moment_magnitude_scale a owl:DatatypeProperty, owl:FunctionalProperty ; 
+	rdfs:comment "earthquake magnitude on the moment magnitude scale" ; 
+	rdfs:domain kes:Earthquake ; rdfs:range xsd:decimal .
+kes:jma_magnitude a owl:DatatypeProperty, owl:FunctionalProperty ; 
+	rdfs:comment "JMA Magnitude" ; 
+	rdfs:domain kes:Earthquake ; rdfs:range xsd:decimal .
+
+#-----------
+
+kes:concerns_subject a owl:ObjectProperty ; 
+	rdfs:domain kes:Emergency_to_handle ; rdfs:range kes:Subject_of_Intervention .
+kes:number_of_subjects a owl:DatatypeProperty, owl:FunctionalProperty ; 
+	rdfs:domain kes:Emergency_to_handle ; rdfs:range xsd:integer .
+
+kes:Emergency_to_handle a owl:Class ; 
+		kes:class_color_AP "red" ;
+		rdfs:subClassOf kes:Localizable, kes:OperationalConcept ;
+		kes:has_object_property_AP kes:concerns_subject ;
+		kes:has_datatype_property_AP kes:number_of_subjects .
+	
+	kes:Death_Emergency rdfs:subClassOf kes:Emergency_to_handle ;
+		rdfs:subClassOf [ 
+			a owl:Restriction; owl:onProperty kes:concerns_subject ; owl:allValuesFrom kes:Dead_Person ; owl:minCardinality "1"^^xsd:integer
+		] , 
+		[ 
+			a owl:Restriction; owl:onProperty kes:on_location_point ; owl:allValuesFrom kes:SpaceTimeLocation_Point ; owl:cardinality "1"^^xsd:integer
+		] .
+	kes:Injured_Emergency rdfs:subClassOf kes:Emergency_to_handle ;
+		rdfs:subClassOf [ 
+			a owl:Restriction; owl:onProperty kes:concerns_subject ; owl:allValuesFrom kes:Injured_Person ; owl:minCardinality "1"^^xsd:integer
+		] , 
+		[ 
+			a owl:Restriction; owl:onProperty kes:on_location_point ; owl:allValuesFrom kes:SpaceTimeLocation_Point ; owl:cardinality "1"^^xsd:integer
+		] .
+	kes:Rescue_Emergency rdfs:subClassOf kes:Emergency_to_handle ;
+		rdfs:subClassOf [ 
+			a owl:Restriction; owl:onProperty kes:concerns_subject ; owl:allValuesFrom kes:Missing_OR_InDistress_Person ; owl:minCardinality "1"^^xsd:integer
+		] , 
+		[ 
+			a owl:Restriction; owl:onProperty kes:on_location_point ; owl:allValuesFrom kes:SpaceTimeLocation_Point ; owl:cardinality "1"^^xsd:integer
+		] .
+	
+	kes:DisplacedPeople_Emergency rdfs:subClassOf kes:Emergency_to_handle ;
+		rdfs:subClassOf [ 
+			a owl:Restriction; owl:onProperty kes:concerns_subject ; owl:allValuesFrom kes:Displaced_Person ; owl:minCardinality "1"^^xsd:integer
+		] , 
+		[ 
+			a owl:Restriction; owl:onProperty kes:on_location_point ; owl:allValuesFrom kes:SpaceTimeLocation_Point ; owl:cardinality "1"^^xsd:integer
+		] .
+	
+	kes:Collapsed_Building_Emergency rdfs:subClassOf kes:Emergency_to_handle  ;
+		rdfs:subClassOf [ 
+			a owl:Restriction; owl:onProperty kes:concerns_subject ; owl:allValuesFrom kes:Building ; owl:minCardinality "1"^^xsd:integer
+		] , 
+		[ 
+			a owl:Restriction; owl:onProperty kes:on_location_point ; owl:allValuesFrom kes:SpaceTimeLocation_Point ; owl:cardinality "1"^^xsd:integer
+		] .
+
+#-----------
+kes:Subject_of_Intervention a owl:Class ; 
+		kes:class_color_AP "darkviolet" ; # "purple" ;
+		rdfs:subClassOf kes:Localizable, kes:OperationalConcept .
+
+	kes:Injured_Person a owl:Class ; 
+		rdfs:subClassOf kes:Person, kes:Subject_of_Intervention .
+	kes:Dead_Person a owl:Class ;
+		rdfs:subClassOf kes:Person, kes:Subject_of_Intervention .
+	kes:Missing_OR_InDistress_Person a owl:Class ;
+		rdfs:subClassOf kes:Person, kes:Subject_of_Intervention .
+	kes:Displaced_Person a owl:Class ;
+		rdfs:subClassOf kes:Person, kes:Subject_of_Intervention .
+	
+	kes:Building a owl:Class ;
+		rdfs:subClassOf kes:Subject_of_Intervention .
+
+kes:Victim_Status a owl:Class .
+	kes:dead_status a kes:Victim_Status .
+	kes:injured_status a kes:Victim_Status .
+	kes:missing_status a kes:Victim_Status .
+	kes:displaced_status a kes:Victim_Status .
+#	kes:inDistress_status a kes:Victim_Status .
+kes:victim_status a owl:ObjectProperty ; rdfs:domain kes:Subject_of_Intervention ; rdfs:range kes:Victim_Status .
+
+#-----------
+
+kes:Intervention_Agent a owl:Class ; 
+	kes:class_color_AP "green" ;
+	rdfs:subClassOf kes:Localizable, kes:Item, kes:OperationalConcept .
+	
+	kes:Medic a owl:Class ; rdfs:subClassOf kes:Intervention_Agent .
+	kes:Paramedic a owl:Class ; rdfs:subClassOf kes:Medic .
+	
+	kes:Driver a owl:Class ; rdfs:subClassOf kes:Intervention_Agent .
+	
+	kes:Ambulance_Driver a owl:Class ; rdfs:subClassOf kes:Driver .
+	kes:Bus_Driver a owl:Class ; rdfs:subClassOf kes:Driver .
+	
+	kes:Buldozer_Operator a owl:Class ; rdfs:subClassOf kes:Intervention_Agent .
+	kes:Excavator_Operator a owl:Class ; rdfs:subClassOf kes:Intervention_Agent .
+	kes:Crane_Operator a owl:Class ; rdfs:subClassOf kes:Intervention_Agent .
+	kes:Compactor_Operator a owl:Class ; rdfs:subClassOf kes:Intervention_Agent .
+	kes:Dump_Truck_driver a owl:Class ; rdfs:subClassOf kes:Intervention_Agent .
+
+#-----------
+
+kes:total_capacity a owl:DatatypeProperty, owl:FunctionalProperty ; 
+	rdfs:domain kes:Intervention_Facility ; 
+	rdfs:range xsd:integer ;
+	rdfs:comment "the maximum number of subjects that a facility can handle/have." .
+
+kes:used_capacity a owl:DatatypeProperty, owl:FunctionalProperty ; 
+	rdfs:domain kes:Intervention_Facility ; 
+	rdfs:range xsd:integer ;
+	rdfs:comment "the number of subjects a facility is handeling/having at the present moment." .
+
+kes:available_capacity a owl:DatatypeProperty, owl:FunctionalProperty ; 
+	rdfs:domain kes:Intervention_Facility ; rdfs:range xsd:integer ;
+	rdfs:range xsd:integer ;
+	rdfs:comment "the available number of subjects a facility can handle/have at the current moment." .
+
+kes:Intervention_Facility a owl:Class ; 
+	kes:class_color_AP "darkslategray" ; # "dimgray" ;
+	rdfs:subClassOf kes:Localizable, kes:OperationalConcept ;
+	rdfs:subClassOf [
+			a owl:Restriction ;
+			owl:onProperty kes:total_capacity ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[
+			a owl:Restriction ;
+			owl:onProperty kes:used_capacity ;
+			owl:cardinality "1"^^xsd:integer
+		] ;
+	kes:has_datatype_property_AP kes:total_capacity, kes:used_capacity, kes:available_capacity .
+	
+	kes:Hospital rdfs:subClassOf kes:Intervention_Facility .
+	kes:Morgue rdfs:subClassOf kes:Intervention_Facility .
+	
+	kes:Shelter rdfs:subClassOf kes:Intervention_Facility .
+
+#-----------
+
+kes:Intervention_Mean a owl:Class ; 
+	kes:class_color_AP "brown" ; # "firebrick" ;
+	rdfs:subClassOf kes:OperationalConcept .
+	
+	kes:Transportation_Mean rdfs:subClassOf kes:Intervention_Mean .
+
+	kes:Ambulance rdfs:subClassOf kes:Transportation_Mean .
+	kes:Bus rdfs:subClassOf kes:Transportation_Mean .
+	
+	kes:Buldozer a owl:Class ; rdfs:subClassOf kes:Intervention_Mean .
+	kes:Excavator a owl:Class ; rdfs:subClassOf kes:Intervention_Mean .
+	kes:Crane a owl:Class ; rdfs:subClassOf kes:Intervention_Mean .
+	kes:Dump_Truck a owl:Class ; rdfs:subClassOf kes:Intervention_Mean .
+	kes:Compactor a owl:Class ; rdfs:subClassOf kes:Intervention_Mean .
+
+#----------- 
+
+kes:Participant_Specification a owl:Class .
+kes:has_participant_AP a owl:AnnotationProperty ; rdfs:domain owl:Class ; rdfs:range kes:Participant_Specification .
+
+kes:Ressource_Specification a owl:Class .
+kes:has_ressource_AP a owl:AnnotationProperty ; rdfs:domain owl:Class ; rdfs:range kes:Ressource_Specification .
+
+kes:Participant_OR_Ressource_Specification a owl:Class ; 
+	owl:equivalentClass [
+        a owl:Class ;
+        owl:unionOf ( 
+			kes:Participant_Specification
+			kes:Ressource_Specification
+		)
+    ] .
+
+# kes:spec_about_prop_AP a owl:AnnotationProperty ; rdfs:domain kes:Participant_Specification ; rdfs:range owl:ObjectProperty .
+kes:spec_about_prop_AP a owl:AnnotationProperty ; rdfs:domain kes:Participant_OR_Ressource_Specification ; rdfs:range owl:ObjectProperty .
+
+kes:kind_of_participant_AP a owl:AnnotationProperty ; rdfs:domain kes:Participant_Specification ; rdfs:range owl:Class .
+kes:number_of_participants_AP a owl:AnnotationProperty ; rdfs:domain kes:Participant_Specification ; rdfs:range xsd:integer .
+kes:participant_role_name_AP a owl:AnnotationProperty ; rdfs:domain kes:Participant_Specification ; rdfs:range xsd:string .
+
+kes:kind_of_ressource_AP a owl:AnnotationProperty ; rdfs:domain kes:Ressource_Specification ; rdfs:range owl:Class .
+kes:number_of_ressources_AP a owl:AnnotationProperty ; rdfs:domain kes:Ressource_Specification ; rdfs:range xsd:integer .
+kes:ressource_role_name_AP a owl:AnnotationProperty ; rdfs:domain kes:Ressource_Specification ; rdfs:range xsd:string .
+
+kes:triggered_by_emergency_AP a owl:AnnotationProperty ; rdfs:domain owl:Class ; rdfs:range owl:Class .
+
+kes:has_agent a owl:ObjectProperty ; rdfs:domain kes:Intervention_Action ; rdfs:range kes:Intervention_Agent .
+kes:has_mean a owl:ObjectProperty ; rdfs:domain kes:Intervention_Action ; rdfs:range kes:Intervention_Mean .
+kes:has_subject a owl:ObjectProperty ; rdfs:domain kes:Intervention_Action ; rdfs:range kes:Subject_of_Intervention .
+
+kes:start_geo_coordinate a owl:ObjectProperty, owl:FunctionalProperty ; rdfs:domain kes:Intervention_Action ; rdfs:range kes:SpaceLocation . # geo:wktLiteral .
+kes:end_geo_coordinate a owl:ObjectProperty, owl:FunctionalProperty ; rdfs:domain kes:Intervention_Action ; rdfs:range kes:SpaceLocation . # geo:wktLiteral .
+
+kes:triggered_by_emergency a owl:ObjectProperty ; rdfs:domain kes:Intervention_Action ; rdfs:range kes:Emergency_to_handle .
+
+kes:emergency_causes_intervention a owl:ObjectProperty ; rdfs:domain kes:Emergency_to_handle ; rdfs:range kes:Intervention_Action .
+
+kes:on_facility a owl:ObjectProperty ; rdfs:domain kes:Intervention_Action ; rdfs:range kes:Intervention_Facility .
+kes:from_facility a owl:ObjectProperty ; rdfs:domain kes:Intervention_Action ; rdfs:range kes:Intervention_Facility .
+kes:to_facility a owl:ObjectProperty ; rdfs:domain kes:Intervention_Action ; rdfs:range kes:Intervention_Facility .
+
+kes:Intervention_Action a owl:Class ; 
+	kes:class_color_AP "blue" ;
+	rdfs:subClassOf kes:OperationalConcept ;
+	kes:has_object_property_AP kes:has_agent, kes:has_mean, kes:has_subject, kes:start_geo_coordinate, kes:end_geo_coordinate, kes:triggered_by_emergency, kes:on_facility .
+
+kes:Injured_Transport rdfs:subClassOf kes:Intervention_Action ; 
+	#----- meta-data
+	kes:triggered_by_emergency_AP kes:Injured_Emergency ;
+	kes:has_participant_AP [ a kes:Participant_Specification ; kes:spec_about_prop_AP kes:has_agent ; kes:participant_role_name_AP "driver" ; kes:kind_of_participant_AP kes:Ambulance_Driver ; kes:number_of_participants_AP 1 ] ; 
+	kes:has_participant_AP [ a kes:Participant_Specification ; kes:spec_about_prop_AP kes:has_agent ; kes:participant_role_name_AP "paramedic" ; kes:kind_of_participant_AP kes:Paramedic ; kes:number_of_participants_AP 1 ] ;
+	kes:has_participant_AP [ a kes:Participant_Specification ; kes:spec_about_prop_AP kes:has_subject ; kes:kind_of_participant_AP kes:Injured_Person ; kes:number_of_participants_AP 1  ] ; 
+	kes:has_ressource_AP [ a kes:Ressource_Specification ; kes:spec_about_prop_AP kes:has_mean ; kes:kind_of_ressource_AP kes:Ambulance ; kes:number_of_ressources_AP 1 ] ; 
+	kes:has_ressource_AP [ a kes:Ressource_Specification ; kes:spec_about_prop_AP kes:to_facility ; kes:kind_of_ressource_AP kes:Hospital ; kes:number_of_ressources_AP 1 ] ;
+	#----- locical axioms
+	rdfs:subClassOf 
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:triggered_by_emergency ;
+			owl:allValuesFrom kes:Injured_Emergency ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_agent ;
+			owl:allValuesFrom kes:Ambulance_Driver ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_agent ;
+			owl:allValuesFrom kes:Paramedic ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_agent ;
+			owl:cardinality "2"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_mean ;
+			owl:allValuesFrom kes:Ambulance ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_subject ;
+			owl:allValuesFrom kes:Injured_Person ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:to_facility ;
+			owl:allValuesFrom kes:Hospital ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:start_geo_coordinate ;
+			owl:allValuesFrom kes:SpaceLocation ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:end_geo_coordinate ;
+			owl:allValuesFrom kes:SpaceLocation ;
+			owl:cardinality "1"^^xsd:integer
+		] .
+
+kes:Dead_Transport rdfs:subClassOf kes:Intervention_Action ; 
+	#----- meta-data
+	kes:triggered_by_emergency_AP kes:Death_Emergency ;
+	kes:has_participant_AP [ a kes:Participant_Specification ; kes:spec_about_prop_AP kes:has_agent ; kes:participant_role_name_AP "driver" ; kes:kind_of_participant_AP kes:Ambulance_Driver ; kes:number_of_participants_AP 1 ] ; 
+	kes:has_participant_AP [ a kes:Participant_Specification ; kes:spec_about_prop_AP kes:has_agent ; kes:participant_role_name_AP "paramedic" ; kes:kind_of_participant_AP kes:Paramedic ; kes:number_of_participants_AP 1 ] ;
+	kes:has_participant_AP [ a kes:Participant_Specification ; kes:spec_about_prop_AP kes:has_subject ; kes:kind_of_participant_AP kes:Dead_Person ; kes:number_of_participants_AP 1 ] ; 
+	kes:has_ressource_AP [ a kes:Ressource_Specification ; kes:spec_about_prop_AP kes:has_mean ; kes:kind_of_ressource_AP kes:Ambulance ; kes:number_of_ressources_AP 1 ] ;
+	kes:has_ressource_AP [ a kes:Ressource_Specification ; kes:spec_about_prop_AP kes:to_facility ; kes:kind_of_ressource_AP kes:Morgue ; kes:number_of_ressources_AP 1 ] ;
+	#----- logical axioms
+	rdfs:subClassOf 
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:triggered_by_emergency ;
+			owl:allValuesFrom kes:Death_Emergency ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_agent ;
+			owl:allValuesFrom kes:Ambulance_Driver ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_agent ;
+			owl:allValuesFrom kes:Paramedic ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_agent ;
+			owl:cardinality "2"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_mean ;
+			owl:allValuesFrom kes:Ambulance ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_subject ;
+			owl:allValuesFrom kes:Dead_Person ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:to_facility ;
+			owl:allValuesFrom kes:Morgue ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:start_geo_coordinate ;
+			owl:allValuesFrom kes:SpaceLocation ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:end_geo_coordinate ;
+			owl:allValuesFrom kes:SpaceLocation ;
+			owl:cardinality "1"^^xsd:integer
+		] .
+
+kes:Displaced_Transport rdfs:subClassOf kes:Intervention_Action ; 
+	#----- meta-data
+	kes:triggered_by_emergency_AP kes:DisplacedPeople_Emergency ;
+	kes:has_participant_AP [ a kes:Participant_Specification ; kes:spec_about_prop_AP kes:has_agent ; kes:participant_role_name_AP "bus driver" ; kes:kind_of_participant_AP kes:Bus_Driver ; kes:number_of_participants_AP 1 ] ; 
+	kes:has_participant_AP [ a kes:Participant_Specification ; kes:spec_about_prop_AP kes:has_subject ; kes:kind_of_participant_AP kes:Displaced_Person ; kes:number_of_participants_AP 50 ] ; 
+	kes:has_ressource_AP [ a kes:Ressource_Specification ; kes:spec_about_prop_AP kes:has_mean ; kes:kind_of_ressource_AP kes:Bus ; kes:number_of_ressources_AP 1 ] ;
+	kes:has_ressource_AP [ a kes:Ressource_Specification ; kes:spec_about_prop_AP kes:to_facility ; kes:kind_of_ressource_AP kes:Shelter ; kes:number_of_ressources_AP 1 ] ;
+	#----- logical axioms
+	rdfs:subClassOf 
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:triggered_by_emergency ;
+			owl:allValuesFrom kes:DisplacedPeople_Emergency ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_agent ;
+			owl:allValuesFrom kes:Bus_Driver ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_mean ;
+			owl:allValuesFrom kes:Bus ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_subject ;
+			owl:allValuesFrom kes:Displaced_Person ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:to_facility ;
+			owl:allValuesFrom kes:Shelter ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:start_geo_coordinate ;
+			owl:allValuesFrom kes:SpaceLocation ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:end_geo_coordinate ;
+			owl:allValuesFrom kes:SpaceLocation ;
+			owl:cardinality "1"^^xsd:integer
+		] .
+
+kes:Debris_Evacuation rdfs:subClassOf kes:Intervention_Action ; 
+	#----- meta-data
+	kes:triggered_by_emergency_AP kes:Collapsed_Building_Emergency ;
+	kes:has_participant_AP [ a kes:Participant_Specification ; kes:spec_about_prop_AP kes:has_agent ; kes:participant_role_name_AP "buldozer operator" ; kes:kind_of_participant_AP kes:Buldozer_Operator ; kes:number_of_participants_AP 1 ] ; 
+	kes:has_ressource_AP [ a kes:Ressource_Specification ; kes:spec_about_prop_AP kes:has_mean ; kes:kind_of_ressource_AP kes:Buldozer ; kes:number_of_ressources_AP 1 ] ;
+	kes:has_participant_AP [ a kes:Participant_Specification ; kes:spec_about_prop_AP kes:has_subject ; kes:kind_of_participant_AP kes:Building ; kes:number_of_participants_AP 1 ] ;
+	#----- logical axioms
+	rdfs:subClassOf 
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:triggered_by_emergency ;
+			owl:allValuesFrom kes:Collapsed_Building_Emergency ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_agent ;
+			owl:allValuesFrom kes:Buldozer_Operator ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_mean ;
+			owl:allValuesFrom kes:Buldozer ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:has_subject ;
+			owl:allValuesFrom kes:Building ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:start_geo_coordinate ;
+			owl:allValuesFrom kes:SpaceLocation ;
+			owl:cardinality "1"^^xsd:integer
+		] ,
+		[ 
+			a owl:Restriction; 
+			owl:onProperty kes:end_geo_coordinate ;
+			owl:allValuesFrom kes:SpaceLocation ;
+			owl:cardinality "1"^^xsd:integer
+		] .
+
+####################################################
+
+#----------------------- Defining properties :
+
+#-------- General properties :
+
+kes:name a owl:DatatypeProperty, owl:FunctionalProperty ; rdfs:domain kes:OperationalConcept ; rdfs:range xsd:string .
+
+kes:on_location_interval a owl:ObjectProperty, owl:FunctionalProperty ; rdfs:domain kes:Localizable ; rdfs:range kes:SpaceTimeLocation_Interval .
+kes:on_location_point a owl:ObjectProperty, owl:FunctionalProperty ; rdfs:domain kes:Localizable ; rdfs:range kes:SpaceTimeLocation_Point .
+
+kes:caused_by_disaster a owl:ObjectProperty, owl:FunctionalProperty ; 
+		rdfs:domain kes:Emergency_to_handle ;  rdfs:range kes:Disaster ;
+		owl:inverseOf kes:disaster_creates_emergency .
+
+kes:disaster_creates_emergency a owl:ObjectProperty ;
+    rdfs:domain kes:Disaster ; rdfs:range kes:Emergency_to_handle ;
+    owl:inverseOf kes:caused_by_disaster .
+
+kes:is_composed_of a owl:ObjectProperty ; rdfs:domain kes:Collection ; rdfs:range kes:Item .
+
+#-----------------------------------------------------------------------
+#------------------------ defining disjointness axioms between concepts:
+
+[
+	rdf:type owl:AllDisjointClasses ; 
+	owl:members ( 
+		kes:Disaster
+		kes:Emergency_to_handle
+		kes:Intervention
+		kes:Intervention_Agent
+		kes:Intervention_Mean
+		kes:Subject_of_Intervention
+	)
+] .
+
+#----------------------------------------------------------------------------------------------
+#-------------------------------------- Data --------------------------------------
+
+#-------------------------------------- earthquake instances
+
+# wd:Q23825118 i.e. http://www.wikidata.org/entity/Q23825118
+kes:2016_Kumamoto_earthquakes a owl:NamedIndividual, kes:Earthquake ;
+	kes:name "2016 Kumamoto earthquakes" ;
+	kes:number_of_injured 2804 ;
+	kes:number_of_deaths 267 ;
+	kes:moment_magnitude_scale 6.2 ; # earthquake magnitude on the moment magnitude scale
+	kes:richter_magnitude_scale 6.9 ; 
+	kes:jma_magnitude 7.3 ; # JMA Magnitude
+	kes:on_location_interval kes:loc_2016_Kumamoto_earthquakes .
+
+	kes:loc_2016_Kumamoto_earthquakes a kes:SpaceTimeLocation_Interval ;
+					kes:startTime "2016-04-14T00:00:00+00:00"^^xsd:dateTime ;
+					kes:endTime "2016-04-16T00:00:00+00:00"^^xsd:dateTime ;
+					# "Point(130.635 32.849)"^^geo:wktLiteral
+					kes:geo_coordinate_lat 130.635 ; 
+					kes:geo_coordinate_long 32.849 .
+
+kes:2010_Mentawai_earthquake_and_tsunami a owl:NamedIndividual, kes:Earthquake_producing_Tsunami ; 
+	kes:name "2010 Mentawai earthquake and tsunami" ;
+	kes:on_location_interval kes:loc_2010_Mentawai_earthquake_and_tsunami .
+	
+	kes:loc_2010_Mentawai_earthquake_and_tsunami a kes:SpaceTimeLocation_Interval ;
+					kes:startTime "2010-10-25T00:00:00+00:00"^^xsd:dateTime ;
+					kes:endTime "2010-10-25T00:00:00+00:00"^^xsd:dateTime ;
+					# "Point(100.084 -3.464)"^^geo:wktLiteral
+					kes:geo_coordinate_lat "100.084"^^xsd:decimal ; 
+					kes:geo_coordinate_long "-3.464"^^xsd:decimal .
+
+kes:1947_Gisborne_earthquakes_and_tsunami a owl:NamedIndividual, kes:Earthquake_producing_Tsunami ; 
+	kes:name "1947 Gisborne earthquakes and tsunami" ;
+	kes:richter_magnitude_scale 7.1 ; 
+	kes:on_location_interval kes:loc_1947_Gisborne_earthquakes_and_tsunami .
+	
+	kes:loc_1947_Gisborne_earthquakes_and_tsunami a kes:SpaceTimeLocation_Interval ;
+					kes:startTime "1947-03-26T00:00:00+00:00"^^xsd:dateTime ;
+					kes:endTime "1947-03-26T00:00:00+00:00"^^xsd:dateTime ;
+					# "Point(100.084 -3.464)"^^geo:wktLiteral
+					kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+					kes:geo_coordinate_long "-3.464"^^xsd:decimal .
+
+#-------------------------------------- Emergency_to_handle instances
+
+kes:dead_person_1 a owl:NamedIndividual, kes:Dead_Person ; 
+	kes:victim_status kes:dead_status ;
+	# "Point(100.084 -3.464)"^^geo:wktLiteral .
+	kes:on_location_point kes:loc_dead_person_1 .
+	
+	kes:loc_dead_person_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.464"^^xsd:decimal .
+
+kes:dead_person_2 a owl:NamedIndividual, kes:Dead_Person ; 
+	kes:victim_status kes:dead_status ;
+	# "Point(100.083 -3.462)"^^geo:wktLiteral .
+	kes:on_location_point kes:loc_dead_person_2 .
+	
+	kes:loc_dead_person_2 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.083"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.462"^^xsd:decimal .
+
+kes:injured_person_1 a owl:NamedIndividual, kes:Injured_Person ; 
+	kes:victim_status kes:injured_status ;
+	# "Point(100.084 -3.464)"^^geo:wktLiteral .
+	kes:on_location_point kes:loc_injured_person_1 .
+	
+	kes:loc_injured_person_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.464"^^xsd:decimal .
+
+kes:inDistress_person_1 a owl:NamedIndividual, kes:Missing_OR_InDistress_Person ; 
+	kes:victim_status kes:inDistress_status ;
+	# "Point(100.084 -3.463)"^^geo:wktLiteral .
+	kes:on_location_point kes:loc_inDistress_person_1 .
+	
+	kes:loc_inDistress_person_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.463"^^xsd:decimal .
+
+kes:ambulance_driver_1 a owl:NamedIndividual, kes:Ambulance_Driver ; 
+	kes:first_name "Riccardo" ; 
+	kes:last_name "Ortega" ; 
+	kes:date_of_birth "1965-04-09T00:00:00+00:00"^^xsd:dateTime ;
+	# "Point(100.084 -3.464)"^^geo:wktLiteral .
+	kes:on_location_point kes:loc_ambulance_driver_1 .
+	
+	kes:loc_ambulance_driver_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.464"^^xsd:decimal .
+
+kes:ambulance_driver_2 a owl:NamedIndividual, kes:Ambulance_Driver ; 
+	kes:first_name "Mickael" ; 
+	kes:last_name "Serein" ; 
+	kes:date_of_birth "1975-07-15T00:00:00+00:00"^^xsd:dateTime ;
+	# "Point(100.084 -3.464)"^^geo:wktLiteral .
+	kes:on_location_point kes:loc_ambulance_driver_2 .
+	
+	kes:loc_ambulance_driver_2 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.464"^^xsd:decimal .
+
+kes:ambulance_driver_3 a owl:NamedIndividual, kes:Ambulance_Driver ; 
+	kes:first_name "Nicolas" ; 
+	kes:last_name "Cavalho" ; 
+	kes:date_of_birth "1987-04-06T00:00:00+00:00"^^xsd:dateTime ;
+	# "Point(100.083 -3.463)"^^geo:wktLiteral .
+	kes:on_location_point kes:loc_ambulance_driver_3 .
+	
+	kes:loc_ambulance_driver_3 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.083"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.463"^^xsd:decimal .
+
+kes:paramedic_1 a owl:NamedIndividual, kes:Paramedic ; 
+	kes:first_name "Irène" ; 
+	kes:last_name "Cholet" ; 
+	kes:date_of_birth "1985-05-25T00:00:00+00:00"^^xsd:dateTime ;
+	# "Point(100.084 -3.464)"^^geo:wktLiteral .
+	kes:on_location_point kes:loc_paramedic_1 .
+	
+	kes:loc_paramedic_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.464"^^xsd:decimal .
+
+kes:paramedic_2 a owl:NamedIndividual, kes:Paramedic ; 
+	kes:first_name "Jean-Louis" ; 
+	kes:last_name "Sabatier" ; 
+	kes:date_of_birth "1985-05-25T00:00:00+00:00"^^xsd:dateTime ;
+	# "Point(100.084 -3.464)"^^geo:wktLiteral .
+	kes:on_location_point kes:loc_paramedic_2 .
+	
+	kes:loc_paramedic_2 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.464"^^xsd:decimal .
+
+kes:paramedic_3 a owl:NamedIndividual, kes:Paramedic ; 
+	kes:first_name "Karl" ; 
+	kes:last_name "Vanberg" ; 
+	kes:date_of_birth "1983-12-19T00:00:00+00:00"^^xsd:dateTime ;
+	# "Point(100.083 -3.461)"^^geo:wktLiteral .
+	kes:on_location_point kes:loc_paramedic_3 .
+	
+	kes:loc_paramedic_3	a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.083"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.461"^^xsd:decimal .
+
+kes:death_emergency_1 a owl:NamedIndividual, kes:Death_Emergency ;
+	kes:caused_by_disaster kes:2016_Kumamoto_earthquakes ;
+	kes:concerns_subject kes:dead_person_1 ;
+	kes:number_of_subjects 1 ; 
+	kes:on_location_point kes:loc_death_emergency_1 .
+	
+	kes:loc_death_emergency_1 a kes:SpaceTimeLocation_Point ;
+		kes:time "2016-04-14T00:00:00+00:00"^^xsd:dateTime ;
+		# "Point(100.084 -3.464)"^^geo:wktLiteral
+		kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.464"^^xsd:decimal .
+
+kes:death_emergency_2 a owl:NamedIndividual, kes:Death_Emergency ;
+	kes:caused_by_disaster kes:2016_Kumamoto_earthquakes ;
+	kes:concerns_subject kes:dead_person_2 ;
+	kes:number_of_subjects 1 ; 
+	kes:on_location_point kes:loc_death_emergency_2 .
+	
+	kes:loc_death_emergency_2 a kes:SpaceTimeLocation_Point ;
+		kes:time "2016-04-14T00:00:00+00:00"^^xsd:dateTime ;
+		# "Point(100.084 -3.464)"^^geo:wktLiteral
+		kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.464"^^xsd:decimal .
+
+kes:injured_emergency_1 a owl:NamedIndividual, kes:Injured_Emergency ;
+	kes:caused_by_disaster kes:2016_Kumamoto_earthquakes ;
+	kes:concerns_subject kes:injured_person_1 ;
+	kes:number_of_subjects 1 ;
+	kes:on_location_point kes:loc_injured_emergency_1 .
+	
+	kes:loc_injured_emergency_1 a kes:SpaceTimeLocation_Point ;
+		kes:time "2016-04-14T00:00:00+00:00"^^xsd:dateTime ;
+		# "Point(100.084 -3.464)"^^geo:wktLiteral
+		kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.464"^^xsd:decimal .
+
+kes:ambulance_1 a owl:NamedIndividual, kes:Ambulance ; 
+	# "Point(100.085 -3.463)"^^geo:wktLiteral .
+	kes:on_location_point kes:loc_ambulance_1 .
+	
+	kes:loc_ambulance_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.085"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.463"^^xsd:decimal .
+
+kes:ambulance_2 a owl:NamedIndividual, kes:Ambulance ; 
+	# "Point(100.083 -3.466)"^^geo:wktLiteral .
+	kes:on_location_point kes:loc_ambulance_2 .
+	
+	kes:loc_ambulance_2 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.083"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.466"^^xsd:decimal .
+
+kes:ambulance_3 a owl:NamedIndividual, kes:Ambulance ; 
+	# "Point(100.081 -3.465)"^^geo:wktLiteral .
+	kes:on_location_point kes:loc_ambulance_3 .
+	
+	kes:loc_ambulance_3	a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.081"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.465"^^xsd:decimal .
+
+kes:ambulance_4 a owl:NamedIndividual, kes:Ambulance ; 
+	# "Point(100.084 -3.467)"^^geo:wktLiteral .
+	kes:on_location_point kes:loc_ambulance_4 .
+	
+	kes:loc_ambulance_4 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.467"^^xsd:decimal .
+
+kes:hospital_1 a owl:NamedIndividual, kes:Hospital ; 
+	kes:total_capacity 100 ;
+	kes:used_capacity 20 ;
+	# kes:available_capacity 80 .
+	#  "Point(100.081 -3.462)"^^geo:wktLiteral ;
+	kes:on_location_point kes:loc_hospital_1 .
+	
+	kes:loc_hospital_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.081"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.462"^^xsd:decimal .
+
+kes:morgue_1 a owl:NamedIndividual, kes:Morgue ; 
+	kes:total_capacity 100 ;
+	kes:used_capacity 30 ;
+	# kes:available_capacity 70 .
+	# "Point(100.082 -3.461)"^^geo:wktLiteral ; 
+	kes:on_location_point kes:loc_morgue_1.
+	
+	kes:loc_morgue_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.082"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.461"^^xsd:decimal .
+
+kes:dead_transport_interv_1 a owl:NamedIndividual, kes:Dead_Transport ; 
+	kes:triggered_by_emergency kes:death_emergency_1 ;
+	kes:has_agent kes:ambulance_driver_1, kes:paramedic_1 ;
+	kes:has_mean kes:ambulance_1 ; 
+	kes:has_subject kes:dead_person_1 ; 
+	# kes:start_geo_coordinate "Point(100.086 -3.468)"^^geo:wktLiteral ; 
+	# kes:end_geo_coordinate "Point(100.082 -3.461)"^^geo:wktLiteral .
+	kes:start_geo_coordinate kes:start_loc_dead_transport_interv_1 ;
+	kes:end_geo_coordinate kes:end_loc_dead_transport_interv_1 .
+	
+	kes:start_loc_dead_transport_interv_1 a kes:SpaceLocation ;
+		kes:geo_coordinate_lat "100.086"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.468"^^xsd:decimal .
+	
+	kes:end_loc_dead_transport_interv_1 a kes:SpaceLocation ;
+		kes:geo_coordinate_lat "100.082"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.461"^^xsd:decimal .
+
+# kes:injured_transport_interv_2 a owl:NamedIndividual, kes:Injured_Transport ; 
+# 	kes:triggered_by_emergency kes:injured_emergency_1 ;
+# 	kes:has_agent kes:ambulance_driver_2, kes:paramedic_2 ;
+# 	kes:has_mean kes:ambulance_2 ; 
+# 	kes:has_subject kes:injured_person_1 ; 
+# 	# kes:start_geo_coordinate "Point(100.084 -3.464)"^^geo:wktLiteral ; 
+# 	kes:start_geo_coordinate kes:start_loc_injured_transport_interv_2 ;
+# 	kes:end_geo_coordinate kes:end_loc_injured_transport_interv_2 .
+# 	
+# 	kes:start_loc_injured_transport_interv_2 a kes:SpaceLocation ;
+# 		kes:geo_coordinate_lat 100.084 ;
+# 		kes:geo_coordinate_long -3.464 .
+# 	
+# 	kes:end_loc_injured_transport_interv_2 a kes:SpaceLocation ;
+# 		kes:geo_coordinate_lat 100.081 ;
+# 		kes:geo_coordinate_long -3.462 .
+
+#-------------------------- modelling a collapsed building
+
+kes:buldozer_operator_1 a owl:NamedIndividual, kes:Buldozer_Operator ; 
+	kes:first_name "Mark" ; 
+	kes:last_name "Kagan" ; 
+	kes:date_of_birth "1975-03-18T00:00:00+00:00"^^xsd:dateTime ;
+	kes:on_location_point kes:loc_buldozer_op_1 .
+	
+	kes:loc_buldozer_op_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.086"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.463"^^xsd:decimal .
+
+kes:buldozer_1 a owl:NamedIndividual, kes:Buldozer ; 
+	kes:on_location_point kes:loc_buldozer_1 .
+	
+	kes:loc_buldozer_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.085"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.463"^^xsd:decimal .
+
+kes:building_1 a owl:NamedIndividual, kes:Building ; 
+	kes:on_location_point kes:loc_building_1 .
+	
+	kes:loc_building_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.094"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.465"^^xsd:decimal .
+
+kes:collapsed_building_emg_1 a owl:NamedIndividual, kes:Collapsed_Building_Emergency ;
+	kes:caused_by_disaster kes:2016_Kumamoto_earthquakes ;
+	kes:concerns_subject kes:building_1 ;
+	kes:number_of_subjects 1 ; 
+	kes:on_location_point kes:loc_collap_build_emg_1 .
+	
+	kes:loc_collap_build_emg_1 a kes:SpaceTimeLocation_Point ;
+		kes:time "2016-04-14T00:00:00+00:00"^^xsd:dateTime ;
+		kes:geo_coordinate_lat "100.094"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.465"^^xsd:decimal .
+
+#---------------------------------------------------
+#---------- regarding displaced people :
+
+kes:bus_driver_1 a owl:NamedIndividual, kes:Bus_Driver ; 
+	kes:first_name "Tom" ; 
+	kes:last_name "Kaplan" ; 
+	kes:date_of_birth "1974-02-09T00:00:00+00:00"^^xsd:dateTime ;
+	kes:on_location_point kes:loc_bus_driver_1 .
+	
+	kes:loc_bus_driver_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.085"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.464"^^xsd:decimal .
+
+kes:bus_1 a owl:NamedIndividual, kes:Bus ; 
+	kes:on_location_point kes:loc_bus_1 .
+	
+	kes:loc_bus_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.462"^^xsd:decimal .
+
+kes:shelter_1 a owl:NamedIndividual, kes:Shelter ; 
+	kes:total_capacity 300 ;
+	kes:used_capacity 55 ;
+	kes:on_location_point kes:loc_shelter_1 .
+	
+	kes:loc_shelter_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.083"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.461"^^xsd:decimal .
+
+kes:displaced_person_1 a owl:NamedIndividual, kes:Displaced_Person ; 
+	kes:victim_status kes:displaced_status ;
+	kes:on_location_point kes:loc_displaced_person_1 .
+	
+	kes:loc_displaced_person_1 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.083"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.462"^^xsd:decimal .
+
+kes:displaced_person_2 a owl:NamedIndividual, kes:Displaced_Person ; 
+	kes:victim_status kes:displaced_status ;
+	kes:on_location_point kes:loc_displaced_person_2 .
+	
+	kes:loc_displaced_person_2 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.461"^^xsd:decimal .
+
+kes:displaced_person_3 a owl:NamedIndividual, kes:Displaced_Person ; 
+	kes:victim_status kes:displaced_status ;
+	kes:on_location_point kes:loc_displaced_person_3 .
+	
+	kes:loc_displaced_person_3 a kes:SpaceTimeLocation_Point ;
+		kes:geo_coordinate_lat "100.084"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.461"^^xsd:decimal .
+
+kes:displaced_emg_1 a owl:NamedIndividual, kes:DisplacedPeople_Emergency ;
+	kes:caused_by_disaster kes:2016_Kumamoto_earthquakes ;
+	kes:concerns_subject kes:displaced_person_1, kes:displaced_person_2, kes:displaced_person_3 ;
+	kes:number_of_subjects 3 ; 
+	kes:on_location_point kes:loc_displaced_emg_1 .
+	
+	kes:loc_displaced_emg_1 a kes:SpaceTimeLocation_Point ;
+		kes:time "2016-04-14T00:00:00+00:00"^^xsd:dateTime ;
+		kes:geo_coordinate_lat "100.093"^^xsd:decimal ;
+		kes:geo_coordinate_long "-3.464"^^xsd:decimal .
+
+#-------------------------------------------------------------------------
+
+#------------ Defining SWRL rules :
+
+#-------- rule 1 :
+#---- equivalent to : 
+#---- 	Intervention_Facility(?f), total_capacity(?f, ?t), used_capacity(?f, ?u), subtract(?a, ?t, ?u) -> available_capacity(?f, ?a)
+<urn:swrl#f> a swrl:Variable .
+<urn:swrl#u> a swrl:Variable .
+<urn:swrl#t> a swrl:Variable .
+<urn:swrl#a> a swrl:Variable .
+[] a swrl:Imp ;
+    swrl:body ( 
+		[
+			# Intervention_Facility(?f)
+			a swrl:ClassAtom ;
+			swrl:argument1 <urn:swrl#f> ;
+			swrl:classPredicate kes:Intervention_Facility 
+		] 
+		[ 
+			# total_capacity(?f, ?t)
+			a swrl:DatavaluedPropertyAtom ;
+			swrl:argument1 <urn:swrl#f> ;
+			swrl:argument2 <urn:swrl#t> ;
+			swrl:propertyPredicate kes:total_capacity 
+		] 
+		[ 
+			# used_capacity(?f, ?u)
+			a swrl:DatavaluedPropertyAtom ;
+			swrl:argument1 <urn:swrl#f> ;
+			swrl:argument2 <urn:swrl#u> ;
+			swrl:propertyPredicate kes:used_capacity 
+		] 
+		[ 
+			# subtract(?a, ?t, ?u)
+			a swrl:BuiltinAtom ;
+			swrl:arguments ( <urn:swrl#a> <urn:swrl#t> <urn:swrl#u> ) ;
+			swrl:builtin swrlb:subtract
+		] 
+	) ;
+	swrl:head ( 
+		[ 
+			# available_capacity(?f, ?a)
+			a swrl:DatavaluedPropertyAtom ;
+			swrl:argument1 <urn:swrl#f> ;
+			swrl:argument2 <urn:swrl#a> ;
+			swrl:propertyPredicate kes:available_capacity 
+		] 
+	) .
+
+
